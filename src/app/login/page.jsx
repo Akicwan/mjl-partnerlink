@@ -118,10 +118,20 @@ export default function LoginPage() {
 
         {error && <div style={{ color: 'red', marginBottom: '1rem' }}>{error}</div>}
 
-        <button type="submit" style={{
-          width: '100%', padding: '10px', border: 'none', borderRadius: '4px',
-          backgroundColor: '#D9AC42', color: 'white', fontSize: '16px', cursor: 'pointer'
-        }}>
+        <button
+          type="submit"
+          style={{
+            width: '100%',
+            padding: '10px',
+            border: 'none',
+            borderRadius: '4px',
+            backgroundColor: '#D9AC42',
+            color: 'white',
+            fontSize: '16px',
+            cursor: 'pointer',
+          }}
+          className="transition duration-300 ease-in-out transform hover:bg-[#B78B29] hover:scale-105"
+        >
           Login
         </button>
 
