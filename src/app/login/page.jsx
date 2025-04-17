@@ -1,18 +1,18 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '../lib/supabaseClient'  // Correct import path
+import { supabase } from '../lib/supabaseClient'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [rememberMe, setRememberMe] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
 
   const handleLogin = async (event) => {
     event.preventDefault()
 
-    // Authenticate the user with Supabase
     const { data, error: loginError } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -23,12 +23,10 @@ export default function LoginPage() {
       return
     }
 
-    // If login is successful, check the user's role
     const user = data.user
     if (user) {
-      // Fetch user data (e.g., role from a user profile table in Supabase)
       const { data: userProfile, error: profileError } = await supabase
-        .from('users') // Assuming you have a users table with a role column
+        .from('users')
         .select('role')
         .eq('id', user.id)
         .single()
@@ -38,11 +36,20 @@ export default function LoginPage() {
         return
       }
 
-      // Redirect based on role
+      if (rememberMe) {
+        // Save the session for persistent login (cookies or localStorage can be used here)
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+        if (sessionError) {
+          setError(sessionError.message)
+          return
+        }
+        localStorage.setItem('supabaseSession', JSON.stringify(sessionData)) // Storing session info in localStorage
+      }
+
       if (userProfile.role === 'admin') {
-        router.push('/admin')  // Redirect to admin page
+        router.push('/admin')
       } else if (userProfile.role === 'partner') {
-        router.push('/partner')  // Redirect to partner page
+        router.push('/partner')
       } else {
         setError('Invalid role or access denied.')
       }
@@ -52,24 +59,19 @@ export default function LoginPage() {
   return (
     <div style={{
       display: 'flex', justifyContent: 'center', alignItems: 'center',
-      height: '100vh', backgroundColor: '#692B2C' // Brownish maroon color
+      height: '100vh', backgroundColor: '#692B2C'
     }}>
       <form onSubmit={handleLogin} style={{
         backgroundColor: 'white', padding: '2rem', borderRadius: '8px',
         boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)', width: '100%', maxWidth: '400px',
         display: 'flex', flexDirection: 'column', alignItems: 'center'
       }}>
-        {/* Logo Placeholder */}
         <img 
           src="/MJL-logo.png" 
           alt="MJL PartnerLink Logo" 
-          style={{
-            width: '150px',
-            height: '150px',
-            marginBottom: '1rem',
-            objectFit: 'contain'
-          }} 
+          style={{ width: '150px', height: '150px', marginBottom: '1rem', objectFit: 'contain' }} 
         />
+
         <div style={{ marginBottom: '1rem', width: '100%' }}>
           <label style={{ color: 'black', fontSize: '14px' }}>Email:</label><br />
           <input
@@ -100,7 +102,20 @@ export default function LoginPage() {
           />
         </div>
 
-        {/* Error Message */}
+        {/* Remember Me Checkbox */}
+        <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+          <input
+            type="checkbox"
+            id="rememberMe"
+            checked={rememberMe}
+            onChange={(e) => setRememberMe(e.target.checked)}
+            style={{ marginRight: '8px' }}
+          />
+          <label htmlFor="rememberMe" style={{ fontSize: '14px', color: 'black' }}>
+            Remember Me
+          </label>
+        </div>
+
         {error && <div style={{ color: 'red', marginBottom: '1rem' }}>{error}</div>}
 
         <button type="submit" style={{
@@ -109,6 +124,20 @@ export default function LoginPage() {
         }}>
           Login
         </button>
+
+        {/* Redirect to reset-password page */}
+        <p
+          onClick={() => router.push('/login/reset-password')}
+          style={{
+            marginTop: '1rem',
+            color: '#692B2C',
+            cursor: 'pointer',
+            fontSize: '14px',
+            textDecoration: 'underline'
+          }}
+        >
+          Forgot Password?
+        </p>
       </form>
     </div>
   )

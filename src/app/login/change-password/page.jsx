@@ -1,20 +1,39 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { supabase } from '../../lib/supabaseClient'
-import { useRouter } from 'next/navigation'
 
-export default function ResetPasswordRequestPage() {
-  const [email, setEmail] = useState('')
+export default function ChangePasswordPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const accessToken = searchParams.get('access_token')
+
+  const [newPassword, setNewPassword] = useState('')
   const [message, setMessage] = useState('')
   const [isSuccess, setIsSuccess] = useState(false)
-  const router = useRouter()
 
-  const handleSendResetLink = async (e) => {
+  useEffect(() => {
+    const exchangeToken = async () => {
+      if (accessToken) {
+        const { error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: accessToken,
+        })
+        if (error) {
+          setMessage('Session error: ' + error.message)
+        }
+      }
+    }
+
+    exchangeToken()
+  }, [accessToken])
+
+  const handlePasswordChange = async (e) => {
     e.preventDefault()
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: 'http://localhost:3000/login/change-password', // or your deployed URL
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
     })
 
     if (error) {
@@ -22,7 +41,10 @@ export default function ResetPasswordRequestPage() {
       setMessage(error.message)
     } else {
       setIsSuccess(true)
-      setMessage('Password reset link sent! Check your email.')
+      setMessage('Password changed successfully! Redirecting to login...')
+      setTimeout(() => {
+        router.push('/login')
+      }, 3000)
     }
   }
 
@@ -34,7 +56,7 @@ export default function ResetPasswordRequestPage() {
       justifyContent: 'center',
       alignItems: 'center',
     }}>
-      <form onSubmit={handleSendResetLink} style={{
+      <form onSubmit={handlePasswordChange} style={{
         backgroundColor: 'white',
         padding: '2rem',
         borderRadius: '8px',
@@ -44,13 +66,13 @@ export default function ResetPasswordRequestPage() {
         flexDirection: 'column',
         gap: '1rem',
       }}>
-        <h2 style={{ textAlign: 'center', color: '#692B2C' }}>Reset Your Password</h2>
+        <h2 style={{ textAlign: 'center', color: '#692B2C' }}>Set New Password</h2>
 
         <input
-          type="email"
-          placeholder="Enter your email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          type="password"
+          placeholder="New Password"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
           required
           style={{
             padding: '10px',
@@ -70,7 +92,7 @@ export default function ResetPasswordRequestPage() {
           fontWeight: 'bold',
           cursor: 'pointer',
         }}>
-          Send Reset Link
+          Change Password
         </button>
 
         {message && (
