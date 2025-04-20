@@ -6,7 +6,7 @@ export default function HomeRedirect() {
   const router = useRouter();
 
   useEffect(() => {
-    router.push('/login');
+    router.push('/PublicPage');
   }, [router]);
 
   return null;
